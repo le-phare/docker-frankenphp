@@ -3,6 +3,7 @@
 FROM base
 
 ENV APP_ENV=prod
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
