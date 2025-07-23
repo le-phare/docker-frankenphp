@@ -1,6 +1,9 @@
-#syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1
+# check=error=true
 
 FROM dunglas/frankenphp:1-php8.4-alpine
+
+RUN apk upgrade
 
 WORKDIR /var/www/symfony
 

@@ -1,4 +1,5 @@
-#syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1
+# check=error=true
 
 FROM base
 
