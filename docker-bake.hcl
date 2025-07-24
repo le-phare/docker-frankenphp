@@ -46,7 +46,7 @@ target "dev-local" {
 }
 
 target "dev-all" {
-  inherits = ["prod"]
+  inherits = ["dev"]
   platforms = [
     "linux/amd64",
     "linux/arm64"
@@ -74,8 +74,4 @@ target "prod-local" {
 
 target "prod-all" {
   inherits = ["prod"]
-  platforms = [
-    "linux/amd64",
-    "linux/arm64"
-  ]
 }
