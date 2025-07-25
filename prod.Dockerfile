@@ -4,9 +4,12 @@
 FROM base
 
 ENV APP_ENV=prod
-ENV COMPOSER_ALLOW_SUPERUSER=1
+
+USER root
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+USER php
 
 COPY --link conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 COPY --link --chmod=755 docker-entrypoint-prod.sh /usr/local/bin/docker-entrypoint

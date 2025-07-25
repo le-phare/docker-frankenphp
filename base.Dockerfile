@@ -3,15 +3,17 @@
 
 FROM dunglas/frankenphp:1-php8.4-alpine
 
-RUN apk upgrade
-
 WORKDIR /var/www/symfony
-
-RUN set -eux; addgroup -g 1000 -S php && adduser -G php -S -u 1000 php
 
 ARG PHP_EXTENSIONS
 
-RUN set -eux; install-php-extensions ${PHP_EXTENSIONS}
+RUN set -eux; \
+    apk upgrade; \
+    install-php-extensions ${PHP_EXTENSIONS}; \
+    addgroup -g 1000 -S php && adduser -G php -S -u 1000 php; \
+    chown php:php -R /app/public /config/caddy /data/caddy /etc/caddy /etc/frankenphp /var/www/symfony
+
+USER php
 
 ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
