@@ -19,6 +19,8 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
+	file_server
+
 	@phpRoute {
 		not file {path}
 	}
@@ -27,7 +29,4 @@
 	@frontController path index.php
 	php @frontController
 
-	file_server {
-		hide *.php
-	}
 }
