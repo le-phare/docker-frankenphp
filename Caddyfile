@@ -19,6 +19,16 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
+    # If the requested PHP script exists, simply execute it.
+	@phpFile {
+		path_regexp ^/(.*\.php)$
+		file {path}
+	}
+	php @phpFile
+
+    # If the requested filename exists, simply serve it.
+    # We only want to let Apache serve files and not directories.
+    # Rewrite all other queries to the front controller.
 	file_server
 
 	@phpRoute {
@@ -26,6 +36,8 @@
 	}
 	rewrite @phpRoute index.php
 
+    # Use the front controller as index file. It serves as a fallback solution when every other rewrite/redirect fails
+    # "/index" should not resolve to the front controller "/index.php" but be rewritten to "/index.php/index".
 	@frontController path index.php
 	php @frontController
 
