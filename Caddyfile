@@ -27,7 +27,7 @@
 	php @phpFile
 
     # If the requested filename exists, simply serve it.
-    # We only want to let Apache serve files and not directories.
+    # We only want to let Caddy serve files and not directories.
     # Rewrite all other queries to the front controller.
 	file_server
 
