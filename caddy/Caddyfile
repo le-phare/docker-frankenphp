@@ -1,0 +1,14 @@
+import /etc/caddy/le_phare/global_options.Caddyfile
+
+import /etc/caddy/le_phare/http_site_block.Caddyfile {
+    import /etc/caddy/le_phare/symfony_static_error_pages.Caddyfile
+
+    import /etc/caddy/le_phare/http_cache.Caddyfile
+
+    import /etc/caddy/le_phare/file_server.Caddyfile
+
+    handle {
+        rewrite * /index.php
+        php
+    }
+}

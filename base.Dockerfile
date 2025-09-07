@@ -21,10 +21,11 @@ USER php
 ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
 COPY --link conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
-COPY --link Caddyfile /etc/frankenphp/Caddyfile
+COPY --link --chown=1000:1000 ./caddy/ /etc/caddy/le_phare/
+COPY --link --chown=1000:1000 ./Caddyfile /etc/caddy/
 
 ENTRYPOINT ["docker-entrypoint"]
 
 HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
 
-CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile" ]
+CMD [ "frankenphp", "run" ]

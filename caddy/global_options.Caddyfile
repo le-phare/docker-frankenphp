@@ -1,0 +1,17 @@
+{
+	auto_https disable_certs
+	local_certs
+	skip_install_trust
+
+	frankenphp {
+		worker {
+			file ./public/index.php
+			env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
+			{$CADDY_FRANKENPHP_WORKER_CONFIG}
+		}
+	}
+
+	servers {
+	    trusted_proxies {$CADDY_TRUSTED_PROXIES:static private_ranges}
+	}
+}
