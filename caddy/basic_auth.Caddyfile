@@ -1,0 +1,9 @@
+@show-basic-auth {
+    vars {env.APP_ENV} {$CADDY_BASIC_AUTH_APP_ENVS:preprod}
+    not client_ip {$CADDY_BASIC_AUTH_WHITELISTED_IPS:127.0.0.1}
+    {$CADDY_BASIC_AUTH_ADDITIONAL_MATCHERS}
+}
+
+basic_auth @show-basic-auth {
+    {block}
+}

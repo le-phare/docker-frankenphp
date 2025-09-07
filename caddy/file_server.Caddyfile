@@ -1,0 +1,10 @@
+@file-server {
+    not path *.php
+    file {path}
+}
+
+handle @file-server {
+    file_server {
+        hide *.php
+    }
+}

@@ -1,0 +1,13 @@
+@cacheable {
+    path *.css *.eot *.gif *.jpeg *.jpg *.js *.otf *.png *.svg *.ttf *.woff *.woff2
+}
+header @cacheable Cache-Control "public, max-age=31536000, immutable" # QPACK 41 https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching#common_caching_patterns
+header @cacheable -ETag
+
+@fontfiles {
+    path *.eot *.otf *.ttf *.woff *.woff2
+}
+header @fontfiles Access-Control-Allow-Origin "*"
+
+@icons path_regexp icons ^/(favicon|apple-touch-icon|android-chrome|mstile)
+header @icons -ETag

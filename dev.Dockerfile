@@ -4,7 +4,7 @@
 FROM base
 
 ENV APP_ENV=dev
-ENV FRANKENPHP_WORKER_CONFIG=watch
+ENV CADDY_FRANKENPHP_WORKER_CONFIG=watch
 ENV XDEBUG_MODE=off
 
 USER root
@@ -20,4 +20,4 @@ USER php
 COPY --link conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 COPY --link --chmod=755 docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint
 
-CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
+CMD [ "frankenphp", "run", "--watch" ]

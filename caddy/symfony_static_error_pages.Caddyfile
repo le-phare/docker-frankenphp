@@ -1,0 +1,5 @@
+handle_errors {
+    root * {$CADDY_STATIC_ERROR_PAGES_PATH:/var/www/symfony/var/cache}
+    rewrite * /error_pages/{err.status_code}.html
+    file_server
+}
