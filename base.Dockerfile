@@ -1,17 +1,20 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-FROM dunglas/frankenphp:1-php8.4-alpine
+FROM dunglas/frankenphp:1-php8.4
 
 WORKDIR /var/www/symfony
 
 ARG PHP_EXTENSIONS
 
 RUN set -eux; \
-    apk upgrade; \
+    apt-get -y update; \
+    apt-get -y upgrade; \
     install-php-extensions ${PHP_EXTENSIONS}; \
-    addgroup -g 1000 -S php && adduser -G php -S -u 1000 php; \
-    chown php:php -R /app/public /config/caddy /data/caddy /etc/caddy /etc/frankenphp /var/www/symfony
+    groupadd -g 1000 php && useradd --no-log-init -u 1000 -g php php; \
+    rm -rf /etc/caddy /etc/frankenphp; \
+    mkdir /etc/caddy; \
+    chown php:php -R /app/public /config/caddy /data/caddy /etc/caddy /var/www/symfony
 
 USER php
 
