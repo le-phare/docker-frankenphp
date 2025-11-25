@@ -13,7 +13,10 @@ RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
 ARG PHP_EXTENSIONS
 
-RUN set -eux; install-php-extensions ${PHP_EXTENSIONS}
+RUN set -eux; \
+    if [ -n "${PHP_EXTENSIONS}" ]; then \
+        install-php-extensions ${PHP_EXTENSIONS}; \
+    fi
 
 USER php
 

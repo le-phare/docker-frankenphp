@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-FROM dunglas/frankenphp:1-php8.4
+ARG PHP_VERSION=8.5
+
+FROM dunglas/frankenphp:1-php${PHP_VERSION}
 
 WORKDIR /var/www/symfony
 
