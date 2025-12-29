@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-FROM dunglas/frankenphp:1-php8.4
+FROM dunglas/frankenphp:1.11-php8.4
 
 WORKDIR /var/www/symfony
 
