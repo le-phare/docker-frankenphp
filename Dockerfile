@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-FROM dunglas/frankenphp:1.11-php8.4
+ARG PHP_VERSION=8.5
+
+FROM dunglas/frankenphp:php${PHP_VERSION} AS base
 
 WORKDIR /var/www/symfony
 
@@ -27,5 +29,37 @@ COPY --link --chown=1000:1000 ./Caddyfile /etc/caddy/
 ENTRYPOINT ["docker-entrypoint"]
 
 HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
+
+FROM base AS dev
+
+ENV APP_ENV=dev
+ENV CADDY_FRANKENPHP_WORKER_CONFIG=watch
+ENV XDEBUG_MODE=off
+
+USER root
+
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+RUN set -eux; install-php-extensions xdebug
+
+USER php
+
+COPY --link conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=755 docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint
+
+CMD [ "frankenphp", "run", "--watch" ]
+
+FROM base AS prod
+
+ENV APP_ENV=prod
+
+USER root
+
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+USER php
+
+COPY --link conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=755 docker-entrypoint-prod.sh /usr/local/bin/docker-entrypoint
 
 CMD [ "frankenphp", "run" ]

@@ -1,20 +1,17 @@
-variable "PHP_VERSION" {
-  default = "8.4"
-}
-
-variable "REPO" {
+variable "IMAGE_NAME" {
   default = "lephare/frankenphp"
 }
 
-// Special target: https://github.com/docker/metadata-action#bake-definition
-target "docker-metadata-action" {}
-
-group "default" {
-  targets = ["dev-local", "prod-local"]
+variable "PHP_LATEST_VERSION" {
+  default = "8.5"
 }
 
-group "image-all" {
-  targets = ["dev-all", "prod-all"]
+// Special target: https://github.com/docker/metadata-action#bake-definition
+target "docker-metadata-action" {
+  platforms = [
+    "linux/amd64",
+    "linux/arm64"
+  ]
 }
 
 target "base" {
@@ -22,56 +19,47 @@ target "base" {
   args = {
     PHP_EXTENSIONS = "@composer apcu exif gd imagick intl memcached opcache pdo_mysql pdo_pgsql pgsql soap zip"
   }
-  dockerfile = "base.Dockerfile"
+  target = "base"
 }
 
-target "dev" {
+target "frankenphp-8-4" {
   inherits = ["docker-metadata-action"]
+  name = "frankenphp-8-4-${tgt}"
+  matrix = {
+    tgt = ["dev", "prod"]
+  }
   args = {
-    PHP_EXTENSIONS = "xdebug"
+    PHP_EXTENSIONS = tgt == "dev" ? "xdebug" : null,
   }
   contexts = {
     base = "target:base"
   }
-  dockerfile = "dev.Dockerfile"
   tags = [
-    "${REPO}:${PHP_VERSION}-dev",
-    "${REPO}:dev",
+    "${IMAGE_NAME}:8.4-${tgt}",
+      tgt == "prod" ? "${IMAGE_NAME}:8.4" : "",
   ]
+  target = tgt
 }
 
-target "dev-local" {
-  inherits = ["dev"]
-  output = ["type=docker"]
-}
-
-target "dev-all" {
-  inherits = ["dev"]
-  platforms = [
-    "linux/amd64",
-    "linux/arm64"
-  ]
-}
-
-target "prod" {
+target "frankenphp-8-5" {
   inherits = ["docker-metadata-action"]
+  name = "frankenphp-8-5-${tgt}"
+  matrix = {
+    tgt = ["dev", "prod"]
+  }
+  args = {
+    PHP_EXTENSIONS = tgt == "dev" ? "xdebug" : null,
+  }
   contexts = {
     base = "target:base"
   }
-  dockerfile = "prod.Dockerfile"
   tags = [
-    "${REPO}:${PHP_VERSION}-prod",
-    "${REPO}:prod",
-    "${REPO}:${PHP_VERSION}",
-    "${REPO}:latest",
+    "${IMAGE_NAME}:8.5-${tgt}",
+      tgt == "prod" ? "${IMAGE_NAME}:8.5" : "",
+    "${IMAGE_NAME}:8-${tgt}",
+      tgt == "prod" ? "${IMAGE_NAME}:8" : "",
+    "${IMAGE_NAME}:${tgt}",
+      tgt == "prod" ? "${IMAGE_NAME}:latest" : "",
   ]
-}
-
-target "prod-local" {
-  inherits = ["prod"]
-  output = ["type=docker"]
-}
-
-target "prod-all" {
-  inherits = ["prod"]
+  target = tgt
 }
