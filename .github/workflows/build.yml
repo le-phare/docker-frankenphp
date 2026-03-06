@@ -1,4 +1,8 @@
-name: Build and push lephare/frankenphp Docker image
+name: Build and push lephare/frankenphp Docker images
+
+# Adapted from the Docker documentation "Multi-platform image with GitHub Actions > With Bake": https://docs.docker.com/build/ci/github-actions/multi-platform/#with-bake
+# With 2 more matrix levels: PHP version and target (dev or prod).
+
 on:
   push:
     branches:
@@ -7,27 +11,149 @@ on:
     branches:
       - master
   schedule:
-    - cron: '0 12 * * SUN' # every sunday
+    - cron: '0 12 * * SUN' # every Sunday
   workflow_dispatch:
 
+env:
+  REGISTRY_IMAGE: lephare/frankenphp
+
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+
+      - name: Rename meta bake definition file
+        run: |
+          mv "${{ steps.meta.outputs.bake-file }}" "${{ runner.temp }}/bake-meta.json"
+
+      - name: Upload meta bake definition
+        uses: actions/upload-artifact@v4
+        with:
+          name: bake-meta
+          path: ${{ runner.temp }}/bake-meta.json
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    needs:
+      - prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8-4', '8-5']
+        platform: ['linux/amd64', 'linux/arm64']
+        tgt: ['dev', 'prod']
+    runs-on: ${{ startsWith(matrix.platform, 'linux/arm') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "MATRIX_PAIR=${{ matrix.php-version }}-${{ matrix.tgt }}-${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Download meta bake definition
+        uses: actions/download-artifact@v4
+        with:
+          name: bake-meta
+          path: ${{ runner.temp }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        id: bake
+        uses: docker/bake-action@v6
+        with:
+          files: |
+            ./docker-bake.hcl
+            cwd://${{ runner.temp }}/bake-meta.json
+          targets: frankenphp-${{ matrix.php-version }}-${{ matrix.tgt }}
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
+            *.output=type=image,push-by-digest=true,name-canonical=true,push=true
+            *.platform=${{ matrix.platform }}
+            *.tags=${{ env.REGISTRY_IMAGE }}
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ fromJSON(steps.bake.outputs.metadata)[format('frankenphp-{0}-{1}', matrix.php-version, matrix.tgt)]['containerimage.digest'] }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.MATRIX_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8-4', '8-5']
+        tgt: ['dev', 'prod']
+    env:
+      DOCKER_BAKE_TARGET: frankenphp-${{ matrix.php-version }}-${{ matrix.tgt }}
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download meta bake definition
+        uses: actions/download-artifact@v4
+        with:
+          name: bake-meta
+          path: ${{ runner.temp }}
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ matrix.php-version }}-${{ matrix.tgt }}-*
+          merge-multiple: true
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
-        uses: docker/bake-action@v6
-        with:
-          push: ${{ github.event_name != 'pull_request' }}
-          targets: image-all
+      - name: Extract Docker Bake metadata
+        id: bake-metadata
+        run: |
+          echo "tags=$(docker buildx bake ${{ env.DOCKER_BAKE_TARGET }} --print | jq -cr '.target."${{ env.DOCKER_BAKE_TARGET }}".tags')" >>${GITHUB_OUTPUT}
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          DOCKER_IMAGETOOLS_ARGS: ${{ github.event_name == 'pull_request' && '--dry-run' || '' }}
+        run: |
+          docker buildx imagetools create ${{ env.DOCKER_IMAGETOOLS_ARGS}} $(echo '${{ steps.bake-metadata.outputs.tags }}' | jq -cr 'map(select(startswith("${{ env.REGISTRY_IMAGE }}")) | "-t " + .) | join(" ")') \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          docker buildx imagetools inspect $(echo '${{ steps.bake-metadata.outputs.tags }}' | jq -cr '.[0]')
