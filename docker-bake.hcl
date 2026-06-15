@@ -14,12 +14,26 @@ target "docker-metadata-action" {
   ]
 }
 
-target "base" {
+target "_base" {
   inherits = ["docker-metadata-action"]
   args = {
     PHP_EXTENSIONS = "@composer apcu exif gd imagick intl memcached opcache pdo_mysql pdo_pgsql pgsql soap zip"
   }
   target = "base"
+}
+
+target "base-8-4" {
+  inherits = ["_base"]
+  args = {
+    PHP_VERSION = "8.4",
+  }
+}
+
+target "base-8-5" {
+  inherits = ["_base"]
+  args = {
+    PHP_VERSION = "8.5",
+  }
 }
 
 target "frankenphp-8-4" {
@@ -32,7 +46,7 @@ target "frankenphp-8-4" {
     PHP_EXTENSIONS = tgt == "dev" ? "xdebug" : null,
   }
   contexts = {
-    base = "target:base"
+    base = "target:base-8-4"
   }
   tags = [
     "${IMAGE_NAME}:8.4-${tgt}",
@@ -51,7 +65,7 @@ target "frankenphp-8-5" {
     PHP_EXTENSIONS = tgt == "dev" ? "xdebug" : null,
   }
   contexts = {
-    base = "target:base"
+    base = "target:base-8-5"
   }
   tags = [
     "${IMAGE_NAME}:8.5-${tgt}",
