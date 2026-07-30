@@ -16,3 +16,13 @@ Pre-configured Docker image that follows [Le Phare](https://www.lephare.com) pro
 - `CADDY_FRANKENPHP_WORKER_CONFIG`
 - `CADDY_STATIC_ERROR_PAGES_PATH`
 - `CADDY_TRUSTED_PROXIES`
+- `DATABASE_WAIT_ATTEMPTS`: how many times (1 per second) the prod entrypoints try to reach the database, defaults to 60
+
+## Hardened image (`lephare/frankenphp-hardened`)
+
+The app code is meant to stay read-only at runtime, so unlike `lephare/frankenphp`, the entrypoint doesn't
+dump the Composer autoloader. Run it in your own build:
+
+```dockerfile
+RUN composer dump-autoload --classmap-authoritative --no-dev
+```
