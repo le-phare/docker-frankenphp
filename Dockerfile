@@ -9,14 +9,16 @@ WORKDIR /var/www/symfony
 
 ARG PHP_EXTENSIONS
 
-RUN set -eux; \
-    apt-get -y update; \
-    apt-get -y upgrade; \
-    install-php-extensions ${PHP_EXTENSIONS}; \
-    groupadd -g 1000 php && useradd --no-log-init -u 1000 -g php php; \
-    rm -rf /etc/caddy /etc/frankenphp; \
-    mkdir /etc/caddy; \
+RUN <<-EOF
+    set -eux
+    apt-get -y update
+    apt-get -y upgrade
+    install-php-extensions ${PHP_EXTENSIONS}
+    groupadd -g 1000 php && useradd --no-log-init -u 1000 -g php php
+    rm -rf /etc/caddy /etc/frankenphp
+    mkdir /etc/caddy
     chown php:php -R /app/public /config/caddy /data/caddy /etc/caddy /var/www/symfony
+EOF
 
 USER php
 

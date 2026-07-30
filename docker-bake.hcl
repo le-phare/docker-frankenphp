@@ -2,6 +2,10 @@ variable "IMAGE_NAME" {
   default = "lephare/frankenphp"
 }
 
+variable "DHI_IMAGE_NAME" {
+  default = "lephare/dhi-frankenphp"
+}
+
 variable "PHP_LATEST_VERSION" {
   default = "8.5"
 }
@@ -76,4 +80,57 @@ target "frankenphp-8-5" {
       tgt == "prod" ? "${IMAGE_NAME}:latest" : "",
   ]
   target = tgt
+}
+
+target "_dhi-builder" {
+  inherits = ["docker-metadata-action"]
+  args = {
+    PHP_EXTENSIONS = "@composer apcu exif gd imagick intl memcached opcache pdo_mysql pdo_pgsql pgsql soap zip"
+  }
+  dockerfile = "dhi.Dockerfile"
+  target = "builder"
+}
+
+target "dhi-builder-8-4" {
+  inherits = ["_dhi-builder"]
+  args = {
+    PHP_VERSION = "8.4",
+  }
+}
+
+target "dhi-builder-8-5" {
+  inherits = ["_dhi-builder"]
+  args = {
+    PHP_VERSION = "8.5",
+  }
+}
+
+target "dhi-frankenphp-8-4-prod" {
+  inherits = ["docker-metadata-action"]
+  contexts = {
+    builder = "target:dhi-builder-8-4"
+  }
+  dockerfile = "dhi.Dockerfile"
+  tags = [
+    "${DHI_IMAGE_NAME}:8.4-prod",
+    "${DHI_IMAGE_NAME}:8.4",
+  ]
+  target = "dhi-prod"
+}
+
+target "dhi-frankenphp-8-5-prod" {
+  inherits = ["docker-metadata-action"]
+  contexts = {
+    builder = "target:dhi-builder-8-5"
+  }
+  dockerfile = "dhi.Dockerfile"
+  tags = [
+    "${DHI_IMAGE_NAME}:8.5-prod",
+    "${DHI_IMAGE_NAME}:8.5",
+    "${DHI_IMAGE_NAME}:8-prod",
+    "${DHI_IMAGE_NAME}:8",
+    "${DHI_IMAGE_NAME}:prod",
+    "${DHI_IMAGE_NAME}:latest",
+  ]
+  target = "dhi-prod"
 }
