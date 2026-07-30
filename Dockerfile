@@ -9,14 +9,16 @@ WORKDIR /var/www/symfony
 
 ARG PHP_EXTENSIONS
 
-RUN set -eux; \
-    apt-get -y update; \
-    apt-get -y upgrade; \
-    install-php-extensions ${PHP_EXTENSIONS}; \
-    groupadd -g 1000 php && useradd --no-log-init -u 1000 -g php php; \
-    rm -rf /etc/caddy /etc/frankenphp; \
-    mkdir /etc/caddy; \
+RUN <<-EOF
+    set -eux
+    apt-get -y update
+    apt-get -y upgrade
+    install-php-extensions ${PHP_EXTENSIONS}
+    groupadd -g 1000 php && useradd --no-log-init -u 1000 -g php php
+    rm -rf /etc/caddy /etc/frankenphp
+    mkdir /etc/caddy
     chown php:php -R /app/public /config/caddy /data/caddy /etc/caddy /var/www/symfony
+EOF
 
 USER php
 
@@ -60,6 +62,7 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 USER php
 
 COPY --link conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=644 docker-entrypoint-common.sh /usr/local/lib/
 COPY --link --chmod=755 docker-entrypoint-prod.sh /usr/local/bin/docker-entrypoint
 
 CMD [ "frankenphp", "run" ]
