@@ -44,6 +44,22 @@ RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
 RUN set -eux; install-php-extensions xdebug
 
+ARG TARGETARCH
+
+RUN set -eux; \
+    case "${TARGETARCH}" in amd64) arch=x64 ;; arm64) arch=arm64 ;; *) exit 1 ;; esac; \
+    release_url=https://github.com/symfony/language-tools/releases; \
+    version="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${release_url}/latest")"; \
+    version="${version##*/}"; \
+    asset="symfony-lsp-${version}-linux-${arch}"; \
+    cd /tmp; \
+    curl -fsSLO "${release_url}/download/${version}/${asset}.tar.gz"; \
+    curl -fsSLO "${release_url}/download/${version}/SHA256SUMS"; \
+    grep " ${asset}.tar.gz\$" SHA256SUMS | sha256sum -c -; \
+    tar -xzf "${asset}.tar.gz" -C /usr/local/bin --strip-components=1 "${asset}/symfony-lsp"; \
+    rm "${asset}.tar.gz" SHA256SUMS; \
+    symfony-lsp --version
+
 USER php
 
 COPY --link conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/

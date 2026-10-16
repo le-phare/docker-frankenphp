@@ -8,6 +8,11 @@ Pre-configured Docker image that follows [Le Phare](https://www.lephare.com) pro
 | 8.4     | 31 Dec. 2028    |
 | 8.5     | 31 Dec. 2029    |
 
+## Tools (`dev` target)
+
+- [Symfony Language Tools](https://github.com/symfony/language-tools) (latest release at build time):
+  run `symfony-lsp check` to report unknown routes, templates, translation keys, services…
+
 ## Environment variables
 
 - `CADDY_BASIC_AUTH_ADDITIONAL_MATCHERS`
